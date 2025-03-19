@@ -1,0 +1,16 @@
+ocf_post:
+  target:
+    entity:
+      integration: smartthings
+      domain: media_player
+  fields:
+    path:
+      required: true
+      example: "/oci/res"
+      selector:
+        text:
+    params:
+      required: true
+      example: "/config/www/example.txt"
+      selector:
+        object:

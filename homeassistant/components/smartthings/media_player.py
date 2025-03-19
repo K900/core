@@ -14,7 +14,8 @@ from homeassistant.components.media_player import (
     RepeatMode,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback, async_get_current_platform
+import voluptuous as vol
 
 from . import FullDevice, SmartThingsConfigEntry
 from .const import MAIN
@@ -48,6 +49,9 @@ VALUE_TO_STATE = {
 }
 
 
+SERVICE_OCF_POST = "ocf_post"
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: SmartThingsConfigEntry,
@@ -66,6 +70,16 @@ async def async_setup_entry(
     ]
     async_add_entities(entities)
 
+    platform = async_get_current_platform()
+
+    platform.async_register_entity_service(
+        SERVICE_OCF_POST,
+        {
+            vol.Required('path'): str,
+            vol.Optional('params', default={}): dict,
+        },
+        "do_ocf_post",
+    )
 
 class SmartThingsMediaPlayer(SmartThingsEntity, MediaPlayerEntity):
     """Define a SmartThings media player."""
@@ -335,5 +349,14 @@ class SmartThingsMediaPlayer(SmartThingsEntity, MediaPlayerEntity):
         if self.supports_capability(Capability.MEDIA_PLAYBACK_REPEAT):
             return self.get_attribute_value(
                 Capability.MEDIA_PLAYBACK_REPEAT, Attribute.PLAYBACK_REPEAT_MODE
+            )
+        return None
+
+    async def do_ocf_post(self, path, params):
+        if self.supports_capability(Capability.EXECUTE):
+            return await self.execute_device_command(
+                Capability.EXECUTE,
+                Command.EXECUTE,
+                argument=[path, params],
             )
         return None
